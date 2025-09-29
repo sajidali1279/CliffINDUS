@@ -4,7 +4,6 @@ B2B and B2C Merger Program
 # Marketplace Platform (Manufacturer ⇄ Retailer ⇄ Consumer)
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/your-repo/ci.yml?branch=main)](https://github.com/your-org/your-repo/actions)  
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## 📖 Description
 
