@@ -1,0 +1,38 @@
+In ThunderClient
+generating JWT Tokens 
+POST http://localhost:8000/api/token/
+1) body -> JSON -> 
+   {
+  "username": "c1",
+  "password": "pass123"
+}
+
+Result: 
+    {
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc2MDgwNzYyMywiaWF0IjoxNzYwMjAyODIzLCJqdGkiOiIxMjg1ZjA4NGFkZTk0YjYwOWQ2NzQzNmY4ZmRlOGYxZSIsInVzZXJfaWQiOiI4In0.BBTPyozJTBCyF8q5mzjHbcFCAyjvFkcIsn8mWYb1ws4",
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYwMjA2NDIzLCJpYXQiOjE3NjAyMDI4MjMsImp0aSI6ImRmYWQ2Y2QzNDdiZjQxZjg5OWRkMDFhOWQwZjliZmY3IiwidXNlcl9pZCI6IjgifQ.hxyJp6Gtj5DRhYLF6Ub6ImUU74RXu8U7KWcBGSZNNqU"
+}
+
+2) 
+  {
+  "username": "r1",
+  "password": "pass123"
+}
+
+Result: 
+  {
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc2MDgwNzg1NiwiaWF0IjoxNzYwMjAzMDU2LCJqdGkiOiJkMGI2ZGFmMWFiNmQ0NGEzOTk2MzM0ODI0OWQ1YTI0MiIsInVzZXJfaWQiOiI5In0.SvFR1RsA8xttueMUBkMRhR6RsAjniPWuiU_MOmbAWUc",
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYwMjA2NjU2LCJpYXQiOjE3NjAyMDMwNTYsImp0aSI6IjIwZDczOGMyZmM4MDQ3YWViYjdmODQ0NzQ0Mjk2YzEwIiwidXNlcl9pZCI6IjkifQ._TLNF464g1JiG0tFav3Hllh2Ji6IaMFtjvd157VufxQ"
+}
+
+3) 
+{
+  "username": "w1",
+  "password": "pass123"
+}
+
+Result: 
+  {
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc2MDgwNzkzNywiaWF0IjoxNzYwMjAzMTM3LCJqdGkiOiI1NTNkMjU4MmZmMGM0NzRhYjAwYWRmZWY1NjA1Y2U5MCIsInVzZXJfaWQiOiIxMCJ9.JPhbn7CRueorcnmkgcDWDdanZZIuXSzcoKD-rC8UJZ0",
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYwMjA2NzM3LCJpYXQiOjE3NjAyMDMxMzcsImp0aSI6ImU0ZmQwYzI0OTMyNTRkY2M5MmIwYTgyYjg0ZTM4MDU3IiwidXNlcl9pZCI6IjEwIn0.hnS_NfZcGS03ffyKo_eq9E0x_9Ag1gwMI1lA---FWco"
+}

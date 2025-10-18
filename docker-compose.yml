@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: cliffindus_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: ./my-first-app/CliffINDUS
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    working_dir: /app/my-first-app/CliffINDUS
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      POSTGRES_DB: cliffindus_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+
+  frontend:
+    build:
+      context: ./my-first-app/CliffINDUS/cliffindus_frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - ./my-first-app/CliffINDUS/cliffindus_frontend:/app
+    ports:
+      - "5173:5173"
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
