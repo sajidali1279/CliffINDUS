@@ -36,26 +36,42 @@ class User(AbstractUser):
     # --------------------------------------------------------
 
     def mark_verified(self, admin_user=None):
-        """Mark this user as verified, set who verified and when."""
+        """Mark this user as verified and record admin and timestamp."""
         self.is_verified = True
         self.verified_by = admin_user
         self.verified_at = timezone.now()
         self.save(update_fields=["is_verified", "verified_by", "verified_at"])
 
     def mark_unverified(self, admin_user=None):
-        """Unverify this user and clear related info."""
+        """Revoke verification and clear audit info."""
         self.is_verified = False
         self.verified_by = admin_user
         self.verified_at = None
         self.save(update_fields=["is_verified", "verified_by", "verified_at"])
 
     def get_verification_info(self):
-        """Return a readable string of who verified and when."""
+        """Return a readable summary of verification details."""
         if not self.is_verified:
-            return "Unverified"
+            return "❌ Unverified"
         admin_name = self.verified_by.username if self.verified_by else "Unknown Admin"
         verified_time = self.verified_at.strftime("%Y-%m-%d %H:%M UTC") if self.verified_at else "N/A"
-        return f"Verified by {admin_name} on {verified_time}"
+        return f"✅ Verified by {admin_name} on {verified_time}"
+
+    @property
+    def is_admin(self):
+        return self.role == "admin"
+
+    @property
+    def is_wholesaler(self):
+        return self.role == "wholesaler"
+
+    @property
+    def is_retailer(self):
+        return self.role == "retailer"
+
+    @property
+    def is_consumer(self):
+        return self.role == "consumer"
 
     def __str__(self):
         return f"{self.username} ({self.role})"
@@ -96,7 +112,7 @@ class RoleUpgradeRequest(models.Model):
     # --------------------------------------------------------
 
     def approve(self, admin_user=None, comment=None):
-        """Approve the request and verify the user."""
+        """Approve and automatically verify the user."""
         self.status = 'approved'
         self.admin_comment = comment or ''
         self.save(update_fields=["status", "admin_comment"])
@@ -104,7 +120,7 @@ class RoleUpgradeRequest(models.Model):
         self.user.mark_verified(admin_user=admin_user)
 
     def reject(self, admin_user=None, comment=None):
-        """Reject the request."""
+        """Reject the request with optional admin notes."""
         self.status = 'rejected'
         self.admin_comment = comment or ''
         self.save(update_fields=["status", "admin_comment"])

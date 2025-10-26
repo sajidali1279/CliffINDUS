@@ -1,11 +1,17 @@
+from datetime import timedelta
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils import timezone
 from django.utils.timezone import localtime
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.admin import SimpleListFilter
+from .admin_dashboard import CliffINDUSAdminSite
 
 from .models import User, RoleUpgradeRequest
 from cliffindus_backend.products.models import Product, Order
+from cliffindus_backend.users.admin_dashboard import cliffindus_admin_site
+from cliffindus_backend.users.models import User
 
 
 # ==========================================================
@@ -40,6 +46,32 @@ class RoleUpgradeRequestInline(admin.TabularInline):
 
 
 # ==========================================================
+# 🧮 CUSTOM FILTER: RECENT VERIFICATION STATUS
+# ==========================================================
+
+class RecentVerificationFilter(SimpleListFilter):
+    title = "Recent Verification"
+    parameter_name = "verified_recently"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("7days", "Verified in last 7 days"),
+            ("30days", "Verified in last 30 days"),
+            ("unverified", "Unverified users"),
+        ]
+
+    def queryset(self, request, queryset):
+        now = timezone.now()
+        if self.value() == "7days":
+            return queryset.filter(is_verified=True, verified_at__gte=now - timedelta(days=7))
+        elif self.value() == "30days":
+            return queryset.filter(is_verified=True, verified_at__gte=now - timedelta(days=30))
+        elif self.value() == "unverified":
+            return queryset.filter(is_verified=False)
+        return queryset
+
+
+# ==========================================================
 # 🧑‍💼 USER ADMIN CONFIGURATION
 # ==========================================================
 
@@ -51,6 +83,7 @@ class UserAdmin(admin.ModelAdmin):
         "email",
         "role_colored",
         "verification_badge",
+        "verified_since",
         "total_products",
         "total_orders",
         "last_verified",
@@ -58,7 +91,7 @@ class UserAdmin(admin.ModelAdmin):
         "last_login",
     )
 
-    list_filter = ("role", "is_verified", "is_active", "verified_at")
+    list_filter = ("role", "is_verified", "is_active", RecentVerificationFilter)
     search_fields = ("username", "email")
     ordering = ("id",)
     actions = ["verify_users", "unverify_users"]
@@ -122,7 +155,6 @@ class UserAdmin(admin.ModelAdmin):
     # LAST VERIFIED AT COLUMN
     # ------------------------------------------------------
     def last_verified(self, obj):
-        """Display last verification timestamp."""
         if not obj.verified_at:
             return format_html("<span style='color:gray;'>—</span>")
         local_time = localtime(obj.verified_at).strftime("%Y-%m-%d %H:%M %Z")
@@ -130,23 +162,40 @@ class UserAdmin(admin.ModelAdmin):
     last_verified.short_description = "Last Verified"
     last_verified.admin_order_field = "verified_at"
 
-     # ------------------------------------------------------
+    # ------------------------------------------------------
+    # TIME SINCE VERIFICATION BADGE
+    # ------------------------------------------------------
+    def verified_since(self, obj):
+        """Show how long ago the user was verified."""
+        if not obj.is_verified or not obj.verified_at:
+            return "-"
+        delta = timezone.now() - obj.verified_at
+        days = delta.days
+        if days < 1:
+            return format_html("<span style='color:teal;'>Today</span>")
+        elif days == 1:
+            return format_html("<span style='color:teal;'>1 day ago</span>")
+        elif days < 30:
+            return format_html(f"<span style='color:teal;'>{days} days ago</span>")
+        else:
+            months = days // 30
+            return format_html(f"<span style='color:teal;'>{months} month(s) ago</span>")
+    verified_since.short_description = "Verified Since"
+
+    # ------------------------------------------------------
     # TOTAL PRODUCTS / ORDERS COUNTS
     # ------------------------------------------------------
     def total_products(self, obj):
-        """Count total products owned by wholesalers and retailers."""
         if obj.role not in ("wholesaler", "retailer"):
             return "-"
         return Product.objects.filter(owner=obj).count()
     total_products.short_description = "Products"
 
     def total_orders(self, obj):
-        """Count total orders placed by retailers and consumers."""
         if obj.role not in ("retailer", "consumer"):
             return "-"
         return Order.objects.filter(user=obj).count()
     total_orders.short_description = "Orders"
-
 
     # ------------------------------------------------------
     # FIELD LAYOUT (DETAIL VIEW)
@@ -168,7 +217,6 @@ class UserAdmin(admin.ModelAdmin):
     # EMAIL NOTIFICATION HELPER
     # ------------------------------------------------------
     def send_verification_email(self, user, verified=True):
-        """Send notification email to user on verification change."""
         subject = "Account Verification Update"
         status = "verified ✅" if verified else "unverified ❌"
         message = (
@@ -185,7 +233,7 @@ class UserAdmin(admin.ModelAdmin):
                 fail_silently=True,
             )
         except Exception:
-            pass  # ignore email failure in dev mode
+            pass
 
     # ------------------------------------------------------
     # ADMIN BULK ACTIONS
@@ -201,3 +249,11 @@ class UserAdmin(admin.ModelAdmin):
             user.mark_unverified(admin_user=request.user)
             self.send_verification_email(user, verified=False)
         self.message_user(request, f"{queryset.count()} user(s) unverified ❌")
+
+
+try:
+    cliffindus_admin_site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+
+cliffindus_admin_site.register(User, UserAdmin)

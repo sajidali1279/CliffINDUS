@@ -1,0 +1,63 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Role Upgrade {{ action|title }} – CliffINDUS{% endblock %}
+{% block content %}
+<div class="content" style="padding:2rem;">
+    {% if action == "approved" %}
+    <h1 style="color:#28a745;">✅ Role Upgrade Approved</h1>
+    {% elif action == "rejected" %}
+    <h1 style="color:#dc3545;">❌ Role Upgrade Rejected</h1>
+    {% else %}
+    <h1 style="color:#6c757d;">ℹ️ Role Upgrade Updated</h1>
+    {% endif %}
+
+    <div class="module" style="margin-top:1.5rem;">
+        <table class="table">
+            <tr>
+                <th>User:</th>
+                <td><strong>{{ object.user.username }}</strong></td>
+            </tr>
+            <tr>
+                <th>Requested Role:</th>
+                <td>{{ object.requested_role|title }}</td>
+            </tr>
+            <tr>
+                <th>Business Name:</th>
+                <td>{{ object.business_name|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Status:</th>
+                <td>
+                    {% if object.status == "approved" %}
+                    <span style="color:green;">APPROVED</span>
+                    {% elif object.status == "rejected" %}
+                    <span style="color:red;">REJECTED</span>
+                    {% else %}
+                    <span style="color:orange;">PENDING</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Admin Comment:</th>
+                <td>{{ object.admin_comment|default:"No comment" }}</td>
+            </tr>
+            <tr>
+                <th>Updated At:</th>
+                <td>{{ object.updated_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-top:2rem;">
+        <a href="/admin/users/roleupgraderequest/" class="button" style="background-color:#007bff;color:white;padding:0.6rem 1.2rem;
+              border-radius:5px;text-decoration:none;">
+            ← Back to Requests
+        </a>
+        <a href="/admin/" class="button" style="background-color:#6c757d;color:white;padding:0.6rem 1.2rem;
+              border-radius:5px;text-decoration:none;">
+            Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

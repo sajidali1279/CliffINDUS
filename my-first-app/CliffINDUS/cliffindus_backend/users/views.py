@@ -10,6 +10,7 @@ from .serializers import UserSerializer
 from cliffindus_backend.users.permissions import IsAdmin
 from rest_framework.views import APIView
 from .serializers import UserSerializer
+from cliffindus_backend.users.utils import get_visible_users_for
 
 
 
@@ -90,54 +91,14 @@ class RoleUpgradeRequestViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     """
     Admin-only viewset for managing user verification and accounts.
+    Visibility is restricted by role (RBAC Phase 1).
     """
-    queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdmin]  # Admin has full write access by default
 
-    @action(detail=True, methods=['patch'], url_path='verify', permission_classes=[IsAdmin])
-    def verify_user(self, request, pk=None):
-        """
-        PATCH /api/users/<id>/verify/
-        Admin-only endpoint to verify wholesalers or retailers directly.
-        """
-        user = self.get_object()
-
-        if user.role not in ['wholesaler', 'retailer']:
-            return Response(
-                {"detail": "Only wholesalers or retailers can be verified."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user.is_verified = True
-        user.save()
-
-        return Response(
-            {"detail": f"{user.role.capitalize()} '{user.email}' verified successfully."},
-            status=status.HTTP_200_OK
-        )
-
-    @action(detail=True, methods=['patch'], url_path='unverify', permission_classes=[IsAdmin])
-    def unverify_user(self, request, pk=None):
-        """
-        PATCH /api/users/<id>/unverify/
-        Allows admin to revoke verification (suspend access).
-        """
-        user = self.get_object()
-
-        if user.role not in ['wholesaler', 'retailer']:
-            return Response(
-                {"detail": "Only wholesalers or retailers can be unverified."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user.is_verified = False
-        user.save()
-
-        return Response(
-            {"detail": f"{user.role.capitalize()} '{user.email}' unverified successfully."},
-            status=status.HTTP_200_OK
-        )
+    def get_queryset(self):
+        return get_visible_users_for(self.request.user).order_by("-date_joined")
+    
 class RegisterUserView(APIView):
     permission_classes = [permissions.AllowAny]
 

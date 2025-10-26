@@ -1,0 +1,238 @@
+{% extends "admin/base_site.html" %}
+{% block title %}CliffINDUS Admin Dashboard{% endblock %}
+{% block content %}
+
+<style>
+    .dashboard-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+    }
+
+    .card h2 {
+        font-size: 1.8rem;
+        color: #222;
+        margin: 0;
+    }
+
+    .card p {
+        margin: 5px 0 0;
+        color: #666;
+    }
+
+    .trend {
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .up {
+        color: green;
+    }
+
+    .down {
+        color: red;
+    }
+
+    .flat {
+        color: gray;
+    }
+
+    .chart-section {
+        margin-top: 40px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .chart-section h2 {
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    canvas {
+        width: 100% !important;
+        height: 400px !important;
+    }
+</style>
+
+<h2 style="margin-top:30px;">Quick Navigation</h2>
+<div style="display:flex;flex-wrap:wrap;gap:12px;">
+    {% for link in quick_links %}
+    <a href="{{ link.url }}" style="padding:10px 18px;background-color:#4CAF50;color:white;
+              border-radius:8px;text-decoration:none;font-weight:bold;">
+        {{ link.name }}
+    </a>
+    {% endfor %}
+</div>
+
+<h1>📊 CliffINDUS Platform Overview</h1>
+
+<div class="dashboard-cards">
+    <!-- Total Users -->
+    <div class="card">
+        <h2>{{ stats.total_users }}</h2>
+        <p>Total Users</p>
+        <span class="trend
+      {% if stats.user_growth|default:0 > 0 %}
+        up
+      {% elif stats.user_growth|default:0 < 0 %}
+        down
+      {% else %}
+        flat
+      {% endif %}
+    ">
+            {% if stats.user_growth|default:0 > 0 %}
+            📈 +{{ stats.user_growth }}%
+            {% elif stats.user_growth|default:0 < 0 %} 📉 {{ stats.user_growth }}% {% else %} — {% endif %} <small>this
+                week</small>
+        </span>
+    </div>
+
+    <!-- Total Orders -->
+    <div class="card">
+        <h2>{{ stats.total_orders }}</h2>
+        <p>Total Orders</p>
+        <span class="trend
+      {% if stats.order_growth|default:0 > 0 %}
+        up
+      {% elif stats.order_growth|default:0 < 0 %}
+        down
+      {% else %}
+        flat
+      {% endif %}
+    ">
+            {% if stats.order_growth|default:0 > 0 %}
+            📈 +{{ stats.order_growth }}%
+            {% elif stats.order_growth|default:0 < 0 %} 📉 {{ stats.order_growth }}% {% else %} — {% endif %} <small>
+                this week</small>
+        </span>
+    </div>
+
+    <!-- Total Products -->
+    <div class="card">
+        <h2>{{ stats.total_products }}</h2>
+        <p>Total Products</p>
+        <span class="trend
+      {% if stats.product_growth|default:0 > 0 %}
+        up
+      {% elif stats.product_growth|default:0 < 0 %}
+        down
+      {% else %}
+        flat
+      {% endif %}
+    ">
+            {% if stats.product_growth|default:0 > 0 %}
+            📈 +{{ stats.product_growth }}%
+            {% elif stats.product_growth|default:0 < 0 %} 📉 {{ stats.product_growth }}% {% else %} — {% endif %}
+                <small>this week</small>
+        </span>
+    </div>
+
+    <!-- Other Cards -->
+    <div class="card">
+        <h2>{{ stats.verified_users }}</h2>
+        <p>Verified Users</p>
+    </div>
+    <div class="card">
+        <h2>{{ stats.wholesalers }}</h2>
+        <p>Wholesalers</p>
+    </div>
+    <div class="card">
+        <h2>{{ stats.retailers }}</h2>
+        <p>Retailers</p>
+    </div>
+    <div class="card">
+        <h2>{{ stats.consumers }}</h2>
+        <p>Consumers</p>
+    </div>
+    <div class="card">
+        <h2>{{ stats.pending_upgrades }}</h2>
+        <p>Pending Upgrades</p>
+    </div>
+</div>
+
+<!-- =========================================== -->
+<!-- 📈 CHARTS SECTION -->
+<!-- =========================================== -->
+<div class="chart-section">
+    <h2>📈 User & Order Growth (Last {{ stats.selected_range }} Days)</h2>
+    <canvas id="userOrderChart"></canvas>
+</div>
+
+<div class="chart-section">
+    <h2>📦 Product Distribution by Category</h2>
+    <canvas id="categoryChart"></canvas>
+</div>
+
+<!-- =========================================== -->
+<!-- Chart.js Script -->
+<!-- =========================================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ stats|json_script:"dashboard-data" }}
+<script>
+    const chartData = JSON.parse(document.getElementById("dashboard-data").textContent);
+    const ctx1 = document.getElementById("userOrderChart").getContext("2d");
+    new Chart(ctx1, {
+        type: "line",
+        data: {
+            labels: chartData.user_labels,
+            datasets: [
+                {
+                    label: "Users", data: chartData.user_values,
+                    borderColor: "rgb(54,162,235)", backgroundColor: "rgba(54,162,235,0.2)",
+                    fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 5
+                },
+                {
+                    label: "Orders", data: chartData.order_values,
+                    borderColor: "rgb(75,192,192)", backgroundColor: "rgba(75,192,192,0.2)",
+                    fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 5
+                }
+            ]
+        },
+        options: { responsive: true, plugins: { legend: { position: "top" } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    const ctx2 = document.getElementById("categoryChart").getContext("2d");
+    new Chart(ctx2, {
+        type: "bar",
+        data: {
+            labels: chartData.category_labels,
+            datasets: [{
+                label: "Products per Category",
+                data: chartData.category_values,
+                backgroundColor: chartData.category_colors,
+                borderColor: chartData.category_colors.map(c => c.replace("0.8", "1")),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: "Top 5 Categories by Product Count", font: { size: 16, weight: "bold" } }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: "rgba(200,200,200,0.2)" } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+
+{{ block.super }}
+{% endblock %}
